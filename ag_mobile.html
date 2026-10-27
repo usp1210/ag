@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AG Model (LWYY) Power &amp; Sample Size — Recurrent CV Events</title>
+<style>
+  :root{
+    --ink:#1c2733; --muted:#5b6b7c; --navy:#1b4f8a; --paper:#ffffff;
+    --panel:#f6f8fa; --grid:#e4e9ee; --border:#cfd8e0; --band:#eef2f6;
+    --c1:#2e7cd6; --c2:#e8663c; --c3:#2fa37c; --c4:#e0a11a;
+    --c5:#8a5cc9; --c6:#c7457f; --c7:#5b8a1b; --c8:#3aa8b8;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Consolas",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--panel);color:var(--ink);
+       font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:var(--paper);border-bottom:1px solid var(--border);padding:14px 22px}
+  header h1{margin:0;font-size:17px;color:var(--navy);font-weight:700;letter-spacing:.01em}
+  header p{margin:3px 0 0;color:var(--muted);font-size:12.5px}
+  .wrap{display:grid;grid-template-columns:300px 1fr;gap:16px;padding:16px 22px;max-width:1500px;margin:0 auto}
+  @media(max-width:960px){.wrap{grid-template-columns:1fr}}
+
+  /* ---- parameter sidebar ---- */
+  .side{background:var(--paper);border:1px solid var(--border);border-radius:6px;
+        padding:14px;align-self:start;position:sticky;top:14px}
+  .side h2{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+           margin:14px 0 6px;font-weight:700}
+  .side h2:first-child{margin-top:0}
+  .fld{margin-bottom:8px}
+  .fld label{display:block;font-size:12px;color:var(--ink);margin-bottom:2px}
+  .fld input,.fld select{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:4px;
+        font:12.5px var(--mono);color:var(--ink);background:#fff}
+  .fld input:focus,.fld select:focus{outline:2px solid var(--navy);outline-offset:0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hint{font-size:11px;color:var(--muted);margin-top:1px}
+  .derived{font:11.5px var(--mono);color:var(--muted);background:var(--band);
+           border-radius:4px;padding:7px 8px;margin-top:10px;white-space:pre-line}
+  .err{color:#b3261e;font-size:12px;margin-top:8px;display:none}
+
+  /* ---- main content ---- */
+  main{min-width:0}
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:6px;
+        padding:14px 16px 10px;margin-bottom:16px}
+  .card h3{margin:0 0 2px;font-size:14.5px;color:var(--navy);font-weight:700}
+  .card .sub{margin:0 0 8px;color:var(--muted);font-size:12.5px}
+  .facets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  @media(max-width:1150px){.facets{grid-template-columns:1fr}}
+  svg{display:block;width:100%;height:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;
+          border:1px solid var(--border);border-radius:4px;padding:6px 12px;margin:10px auto 6px;width:fit-content}
+  .legend .t{font-size:11px;color:var(--muted);width:100%;text-align:center;margin-bottom:1px}
+  .li{display:flex;align-items:center;gap:6px;font-size:12px}
+  .li .sw{width:22px;height:3px;border-radius:2px}
+  .foot{font:10.5px/1.55 var(--mono);color:var(--navy);text-align:center;margin:8px 4px 4px;
+        white-space:pre-line}
+
+  /* ---- table ---- */
+  table{border-collapse:collapse;width:100%;font:12.5px var(--mono)}
+  th,td{border:1px solid var(--border);padding:5px 9px;text-align:right}
+  th{background:var(--band);color:var(--ink);font-weight:600}
+  td:first-child,th:first-child{text-align:left}
+  caption{caption-side:top;text-align:left;font:12px system-ui;color:var(--muted);padding:0 0 6px}
+
+  /* =====================================================================
+     MOBILE / SMALL-SCREEN OVERRIDES (style-only additions)
+     ===================================================================== */
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{overflow-x:hidden}
+
+  /* Tablet and below: single column, parameter panel scrolls with the page.
+     (The sticky sidebar was floating on top of the charts/table.) */
+  @media(max-width:960px){
+    .wrap{padding:12px;gap:12px}
+    .side{position:static;top:auto;z-index:auto}
+    .card{padding:12px 12px 8px;margin-bottom:12px}
+  }
+
+  /* Phones */
+  @media(max-width:600px){
+    header{padding:10px 12px}
+    header h1{font-size:15px;line-height:1.3}
+    header p{font-size:11.5px}
+    .wrap{padding:8px;gap:10px}
+    .side{padding:12px}
+    .card{padding:10px 8px 8px;border-radius:5px}
+    .card h3{font-size:13.5px;line-height:1.3}
+    .card .sub{font-size:12px}
+
+    /* 16px inputs stop iOS Safari from zooming in on focus; bigger touch targets */
+    .fld input,.fld select{font-size:16px;padding:9px 10px;min-height:42px}
+    .fld label{font-size:13px;margin-bottom:3px}
+    .hint{font-size:12px}
+    .derived{font-size:12px}
+    .two{gap:10px}
+
+    /* Charts: SVG is scaled to ~75% on a phone, so enlarge the text inside it
+       (CSS overrides the font-size attributes set by the script) */
+    .facets{gap:14px}
+    svg text{font-size:13px}
+    svg text[font-weight="600"]{font-size:14px}      /* panel titles */
+    svg text[text-anchor="middle"][y]:not([font-weight]){font-size:13px}
+    svg path{stroke-width:3}
+
+    /* legend + footnote */
+    .legend{width:100%;gap:8px 14px;justify-content:flex-start;padding:8px 10px}
+    .legend .t{text-align:left;font-size:12px}
+    .li{font-size:13px}
+    .foot{font-size:11px;text-align:left;margin:8px 0 4px;word-break:break-word}
+
+    /* table: scroll sideways rather than overflow the card */
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;font-size:12px}
+    th,td{padding:6px 8px;white-space:nowrap}
+  }
+
+  /* Very narrow phones: stack the paired inputs */
+  @media(max-width:360px){
+    .two{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Power &amp; Sample Size for Recurrent CV Events — Modified Andersen-Gill (LWYY) Model</h1>
+  <p>Tang &amp; Fitzpatrick method (Stat Med 2019;38:4819-4827; corrected 2022 erratum, Stat Med 2022;41(20):4079) · robust Wald test, staggered entry, exponential dropout</p>
+</header>
+
+<div class="wrap">
+  <!-- ============ PARAMETERS ============ -->
+  <aside class="side">
+    <h2>Design</h2>
+    <div class="two">
+      <div class="fld"><label for="accrual">Accrual (yr)</label>
+        <input id="accrual" type="number" step="0.25" min="0.01" value="2"></div>
+      <div class="fld"><label for="minfu">Min follow-up (yr)</label>
+        <input id="minfu" type="number" step="0.25" min="0.01" value="2.5"></div>
+    </div>
+    <div class="two">
+      <div class="fld"><label for="dropPct">Dropout, cum. %</label>
+        <input id="dropPct" type="number" step="1" min="0" max="99" value="20"></div>
+      <div class="fld"><label for="dropBy">…by (yr)</label>
+        <input id="dropBy" type="number" step="0.5" min="0.1" value="4"></div>
+    </div>
+    <div class="fld"><label for="alloc">Allocation (active : control)</label>
+      <select id="alloc">
+        <option value="0.5" selected>1 : 1</option>
+        <option value="0.6666667">2 : 1</option>
+        <option value="0.3333333">1 : 2</option>
+        <option value="0.75">3 : 1</option>
+      </select></div>
+
+    <h2>Test</h2>
+    <div class="two">
+      <div class="fld"><label for="alpha">Alpha (2-sided)</label>
+        <input id="alpha" type="number" step="0.005" min="0.0001" max="0.5" value="0.05"></div>
+      <div class="fld"><label for="power">Target power</label>
+        <input id="power" type="number" step="0.01" min="0.5" max="0.999" value="0.90"></div>
+    </div>
+
+    <h2>Effect &amp; rates</h2>
+    <div class="fld"><label for="rrs">Rate ratios (facets)</label>
+      <input id="rrs" value="0.65, 0.70, 0.75, 0.80">
+      <div class="hint">comma-separated, each &lt; 1</div></div>
+    <div class="fld"><label for="lams">Control event rates (lines, events/yr)</label>
+      <input id="lams" value="0.2, 0.3, 0.4, 0.5"></div>
+
+    <h2>Overdispersion</h2>
+    <div class="fld"><label for="kappa">&kappa; for power curves</label>
+      <input id="kappa" type="number" step="0.1" min="0" value="1.5">
+      <div class="hint">AG10-301 estimate: 1.5&ndash;2</div></div>
+    <div class="two">
+      <div class="fld"><label for="kmin">&kappa; range min</label>
+        <input id="kmin" type="number" step="0.5" min="0" value="0"></div>
+      <div class="fld"><label for="kmax">&kappa; range max</label>
+        <input id="kmax" type="number" step="0.5" min="0.5" value="3"></div>
+    </div>
+
+    <h2>Sample size axis</h2>
+    <div class="two">
+      <div class="fld"><label for="nmin">N min</label>
+        <input id="nmin" type="number" step="50" min="10" value="500"></div>
+      <div class="fld"><label for="nmax">N max</label>
+        <input id="nmax" type="number" step="50" min="50" value="2000"></div>
+    </div>
+
+    <div class="derived" id="derived"></div>
+    <div class="err" id="err"></div>
+  </aside>
+
+  <!-- ============ OUTPUT ============ -->
+  <main>
+    <div class="card">
+      <h3 id="t1">Power vs total sample size</h3>
+      <p class="sub" id="s1"></p>
+      <div class="facets" id="powerFacets"></div>
+      <div class="legend" id="leg1"></div>
+      <div class="foot" id="foot1"></div>
+    </div>
+
+    <div class="card">
+      <h3 id="t2">Required total sample size vs overdispersion (&kappa;)</h3>
+      <p class="sub" id="s2"></p>
+      <div class="facets" id="kappaFacets"></div>
+      <div class="legend" id="leg2"></div>
+      <div class="foot" id="foot2"></div>
+    </div>
+
+    <div class="card">
+      <h3>Required total N at current &kappa;</h3>
+      <p class="sub" id="s3"></p>
+      <table id="ntab"></table>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+/* ================= numerics ================= */
+// standard normal CDF (Abramowitz & Stegun 7.1.26 via erf)
+function phi(x){
+  const s = x < 0 ? -1 : 1, ax = Math.abs(x)/Math.SQRT2;
+  const t = 1/(1+0.3275911*ax);
+  const y = 1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-ax*ax);
+  return 0.5*(1+s*y);
+}
+// inverse normal CDF (Acklam)
+function phiInv(p){
+  if(p<=0||p>=1) return NaN;
+  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  const pl=0.02425;let q,r;
+  if(p<pl){q=Math.sqrt(-2*Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  if(p<=1-pl){q=p-0.5;r=q*q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+  q=Math.sqrt(-2*Math.log(1-p));
+  return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+}
+
+/* ============ follow-up moments ============
+   T = min(C, D). C ~ Uniform(f, f+a): administrative censoring under
+   uniform accrual over a years with minimum follow-up f.
+   D ~ Exponential(eta): dropout. Midpoint integration over c. */
+function followupMoments(a, f, eta){
+  const m = 400; let s1 = 0, s2 = 0;
+  for(let i=0;i<m;i++){
+    const c = f + (i+0.5)/m*a;
+    let et, et2;
+    if(eta > 1e-12){
+      const e = Math.exp(-eta*c);
+      et  = (1-e)/eta;
+      et2 = 2*(1-e*(1+eta*c))/(eta*eta);
+    } else { et = c; et2 = c*c; }
+    s1 += et; s2 += et2;
+  }
+  return {ET: s1/m, ET2: s2/m};
+}
+
+/* ============ Tang & Fitzpatrick (corrected) ============
+   Var(log RR)·n = Σ_j (1/p_j)·[ 1/(λ_j·E[T]) + κ·E[T²]/E[T]² ]
+   n = (z_{1-α/2}+z_{1-β})² · V / (log RR)²                     */
+function varFactor(rr, lam0, kappa, mom, p1){
+  const p0 = 1-p1, lam1 = lam0*rr, q = mom.ET2/(mom.ET*mom.ET);
+  return (1/p0)*(1/(lam0*mom.ET)+kappa*q) + (1/p1)*(1/(lam1*mom.ET)+kappa*q);
+}
+function requiredN(rr, lam0, kappa, mom, p1, alpha, pow){
+  const z = phiInv(1-alpha/2)+phiInv(pow);
+  return z*z*varFactor(rr,lam0,kappa,mom,p1)/Math.pow(Math.log(rr),2);
+}
+function powerAtN(rr, lam0, kappa, mom, p1, alpha, n){
+  const V = varFactor(rr,lam0,kappa,mom,p1);
+  return phi(Math.abs(Math.log(rr))*Math.sqrt(n/V)-phiInv(1-alpha/2));
+}
+
+/* ================= plotting ================= */
+const COLORS = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8']
+  .map(v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+const css = v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function niceTicks(lo, hi, n){
+  const span=hi-lo, raw=span/Math.max(n,1),
+        mag=Math.pow(10,Math.floor(Math.log10(raw))),
+        norm=raw/mag,
+        step=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag,
+        t0=Math.ceil(lo/step)*step, out=[];
+  for(let t=t0;t<=hi+1e-9;t+=step) out.push(+t.toFixed(10));
+  return out;
+}
+const fmt = v => Math.abs(v)>=1000 ? v.toLocaleString('en-US') : (''+ +v.toFixed(2));
+
+/* one facet panel: series=[{color,pts:[[x,y],...]}]; ref = horizontal reference y */
+function facetSVG(o){
+  const W=460,H=310,ml=52,mr=12,mt=30,mb=40,
+        pw=W-ml-mr, ph=H-mt-mb,
+        X=x=>ml+(x-o.xlo)/(o.xhi-o.xlo)*pw,
+        Y=y=>mt+ph-(y-o.ylo)/(o.yhi-o.ylo)*ph;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.title}">`;
+  s+=`<rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#fff" stroke="${css('--border')}"/>`;
+  s+=`<rect x="${ml}" y="${mt-22}" width="${pw}" height="20" fill="${css('--band')}" stroke="${css('--border')}"/>`;
+  s+=`<text x="${ml+pw/2}" y="${mt-8}" text-anchor="middle" font-size="12" font-weight="600" fill="${css('--ink')}">${o.title}</text>`;
+  for(const t of niceTicks(o.xlo,o.xhi,6)){
+    s+=`<line x1="${X(t)}" y1="${mt}" x2="${X(t)}" y2="${mt+ph}" stroke="${css('--grid')}"/>`;
+    s+=`<text x="${X(t)}" y="${mt+ph+15}" text-anchor="middle" font-size="10.5" fill="${css('--muted')}">${fmt(t)}</text>`;
+  }
+  for(const t of niceTicks(o.ylo,o.yhi,6)){
+    s+=`<line x1="${ml}" y1="${Y(t)}" x2="${ml+pw}" y2="${Y(t)}" stroke="${css('--grid')}"/>`;
+    s+=`<text x="${ml-6}" y="${Y(t)+3.5}" text-anchor="end" font-size="10.5" fill="${css('--muted')}">${fmt(t)}</text>`;
+  }
+  if(o.ref!=null && o.ref>o.ylo && o.ref<o.yhi)
+    s+=`<line x1="${ml}" y1="${Y(o.ref)}" x2="${ml+pw}" y2="${Y(o.ref)}" stroke="#555" stroke-dasharray="5 4"/>`;
+  for(const ser of o.series){
+    const pts=ser.pts.filter(p=>isFinite(p[1]));
+    if(!pts.length) continue;
+    let d='',pen=false;
+    for(const [x,y] of pts){
+      if(y<o.ylo-1e-9||y>o.yhi*1.6){pen=false;continue;}
+      const yy=Math.min(Math.max(y,o.ylo),o.yhi);
+      d+=(pen?'L':'M')+X(x).toFixed(1)+' '+Y(yy).toFixed(1)+' ';pen=true;
+    }
+    s+=`<path d="${d}" fill="none" stroke="${ser.color}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  }
+  s+=`<text x="${ml+pw/2}" y="${H-6}" text-anchor="middle" font-size="11.5" fill="${css('--ink')}">${o.xlab}</text>`;
+  s+=`<text x="13" y="${mt+ph/2}" text-anchor="middle" font-size="11.5" fill="${css('--ink')}" transform="rotate(-90 13 ${mt+ph/2})">${o.ylab}</text>`;
+  return s+'</svg>';
+}
+
+function legendHTML(title, labels){
+  let h=`<div class="t">${title}</div>`;
+  labels.forEach((l,i)=>h+=`<div class="li"><span class="sw" style="background:${COLORS[i%COLORS.length]}"></span>${l}</div>`);
+  return h;
+}
+
+/* ================= controller ================= */
+const $=id=>document.getElementById(id);
+const parseList = s => s.split(/[,\s]+/).filter(Boolean).map(Number).filter(v=>isFinite(v));
+
+function readParams(){
+  const a=+$('accrual').value, f=+$('minfu').value,
+        dropPct=+$('dropPct').value/100, dropBy=+$('dropBy').value,
+        eta=dropPct>0?-Math.log(1-dropPct)/dropBy:0,
+        p1=+$('alloc').value, alpha=+$('alpha').value, pow=+$('power').value,
+        rrs=parseList($('rrs').value).filter(r=>r>0&&r<1),
+        lams=parseList($('lams').value).filter(l=>l>0),
+        kappa=+$('kappa').value, kmin=+$('kmin').value, kmax=+$('kmax').value,
+        nmin=+$('nmin').value, nmax=+$('nmax').value;
+  return {a,f,eta,dropPct,dropBy,p1,alpha,pow,rrs,lams,kappa,kmin,kmax,nmin,nmax};
+}
+
+function footnote(p, extra){
+  const dur=(p.a+p.f).toFixed(p.a+p.f===Math.round(p.a+p.f)?0:1);
+  const fuTxt = p.f===Math.round(p.f) ? p.f+'-year' : (p.f*12)%1===0 ? (p.f*12)+'-month' : p.f+'-year';
+  const allocTxt={'0.5':'1:1','0.6666667':'2:1','0.3333333':'1:2','0.75':'3:1'}[$('alloc').value]||'custom';
+  return [
+    `Staggered-entry design: ${p.a}-year accrual, minimum ${fuTxt} follow-up after enrollment closes (total study duration ${dur} years).`,
+    `Robust Wald test (Lin, Wei, Ying, Yang 2000 sandwich variance), two-sided alpha=${p.alpha}, superiority test (H0: rate ratio >= 1)${extra?'; '+extra:''}.`,
+    `Constant control-arm event rate (Weibull shape nu=1); overdispersion (kappa) assumed equal in both arms.`,
+    `Loss to follow-up: exponential, ${(p.dropPct*100).toFixed(0)}% cumulative dropout by ${p.dropBy} years (annual dropout hazard ${p.eta.toFixed(4)}), equal in both arms. Allocation ${allocTxt}.`,
+    `Sample size calculated per Tang & Fitzpatrick (Stat Med 2019;38:4819-4827; corrected 2022 erratum, Stat Med 2022;41(20):4079).`
+  ].join('\n');
+}
+
+function redraw(){
+  const p=readParams(), err=$('err');
+  err.style.display='none';
+  if(!p.rrs.length||!p.lams.length||!(p.a>0)||!(p.f>0)||!(p.nmax>p.nmin)||!(p.kmax>p.kmin)||!(p.alpha>0&&p.alpha<1)||!(p.pow>0.5&&p.pow<1)){
+    err.textContent='Check inputs: need at least one rate ratio in (0,1), one control rate > 0, valid ranges, alpha in (0,1), power in (0.5,1).';
+    err.style.display='block'; return;
+  }
+  const mom=followupMoments(p.a,p.f,p.eta);
+  $('derived').textContent=
+    `E[follow-up]      = ${mom.ET.toFixed(3)} yr\n`+
+    `E[follow-up^2]    = ${mom.ET2.toFixed(3)} yr^2\n`+
+    `annual dropout haz= ${p.eta.toFixed(4)}\n`+
+    `total study dur.  = ${(p.a+p.f).toFixed(2)} yr`;
+
+  /* ---- figure 1: power vs N ---- */
+  $('t1').textContent=`[kappa=${p.kappa}; ${p.a}-year accrual; ${p.f}-year follow-up] Power for detecting recurrent CV event rate ratios`;
+  $('s1').textContent=`Power vs total sample size under the modified Andersen-Gill (LWYY) model, by rate ratio and control event rate.`;
+  const f1=$('powerFacets'); f1.innerHTML='';
+  for(const rr of p.rrs){
+    const series=p.lams.map((lam,i)=>{
+      const pts=[]; const steps=120;
+      for(let k=0;k<=steps;k++){
+        const n=p.nmin+(p.nmax-p.nmin)*k/steps;
+        pts.push([n,100*powerAtN(rr,lam,p.kappa,mom,p.p1,p.alpha,n)]);
+      }
+      return {color:COLORS[i%COLORS.length],pts};
+    });
+    f1.insertAdjacentHTML('beforeend',facetSVG({
+      title:`Rate ratio = ${rr.toFixed(2)}`, series,
+      xlo:p.nmin,xhi:p.nmax,ylo:50,yhi:100,ref:p.pow*100,
+      xlab:'Total sample size',ylab:'Power (%)'
+    }));
+  }
+  $('leg1').innerHTML=legendHTML('Control event rate',p.lams.map(l=>`${l} events/yr`));
+  $('foot1').textContent=footnote(p,`dashed line at target power ${(p.pow*100).toFixed(0)}%`);
+
+  /* ---- figure 2: required N vs kappa ---- */
+  $('t2').textContent=`[${p.a}-year accrual + ${p.f}-year follow-up] Required total sample size as a function of overdispersion (kappa)`;
+  $('s2').textContent=`Required total N for ${(p.pow*100).toFixed(0)}% power vs kappa (${p.kmin} to ${p.kmax}), by rate ratio and control event rate.`;
+  const f2=$('kappaFacets'); f2.innerHTML='';
+  let nCap=0;
+  const kSeries=p.rrs.map(rr=>p.lams.map(lam=>{
+    const pts=[]; const steps=60;
+    for(let k=0;k<=steps;k++){
+      const kap=p.kmin+(p.kmax-p.kmin)*k/steps;
+      const n=requiredN(rr,lam,kap,mom,p.p1,p.alpha,p.pow);
+      pts.push([kap,n]); if(n>nCap)nCap=n;
+    }
+    return pts;
+  }));
+  const yhi=niceTicks(0,nCap*1.05,6).pop()||nCap;
+  p.rrs.forEach((rr,ri)=>{
+    f2.insertAdjacentHTML('beforeend',facetSVG({
+      title:`Rate ratio = ${rr.toFixed(2)}`,
+      series:kSeries[ri].map((pts,i)=>({color:COLORS[i%COLORS.length],pts})),
+      xlo:p.kmin,xhi:p.kmax,ylo:0,yhi:Math.max(yhi,nCap),ref:null,
+      xlab:'Heterogeneity [overdispersion parameter (kappa)]',
+      ylab:`Total N for ${(p.pow*100).toFixed(0)}% power`
+    }));
+  });
+  $('leg2').innerHTML=legendHTML('Control event rate',p.lams.map(l=>`${l} events/yr`));
+  $('foot2').textContent=footnote(p,`target power ${(p.pow*100).toFixed(0)}%; kappa varied from ${p.kmin} to ${p.kmax}`);
+
+  /* ---- table ---- */
+  $('s3').textContent=`Required total sample size (rounded up to next even integer) for ${(p.pow*100).toFixed(0)}% power at kappa = ${p.kappa}.`;
+  let h='<tr><th>Control rate \\ RR</th>'+p.rrs.map(r=>`<th>${r.toFixed(2)}</th>`).join('')+'</tr>';
+  for(const lam of p.lams){
+    h+=`<tr><td>${lam} events/yr</td>`+p.rrs.map(rr=>{
+      const n=requiredN(rr,lam,p.kappa,mom,p.p1,p.alpha,p.pow);
+      return `<td>${(2*Math.ceil(n/2)).toLocaleString('en-US')}</td>`;
+    }).join('')+'</tr>';
+  }
+  $('ntab').innerHTML=h;
+}
+
+let tmr=null;
+document.querySelectorAll('input,select').forEach(el=>
+  el.addEventListener('input',()=>{clearTimeout(tmr);tmr=setTimeout(redraw,250);}));
+redraw();
+</script>
+</body>
+</html>
